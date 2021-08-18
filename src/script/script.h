@@ -322,6 +322,8 @@ public:
         return *this;
     }
 
+    int64_t GetInt64() const { return m_value; }
+
     int getint() const
     {
         if (m_value > std::numeric_limits<int>::max())
