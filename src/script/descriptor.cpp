@@ -482,6 +482,31 @@ public:
     }
 };
 
+enum class StringType
+{
+    PUBLIC,
+    PRIVATE,
+    NORMALIZED,
+};
+
+/** Helper to convert keys in descriptors to strings, optionally with access to private keys. */
+ bool KeyToString(const SigningProvider* arg, std::string& out, StringType type, const PubkeyProvider& key, const DescriptorCache* cache = nullptr)
+ {
+     switch (type) {
+        case StringType::NORMALIZED:
+            if (!key.ToNormalizedString(*arg, out, cache)) return false;
+            break;
+        case StringType::PRIVATE:
+            if (!key.ToPrivateString(*arg, out)) return false;
+            break;
+        case StringType::PUBLIC:
+            out = key.ToString();
+            break;
+    }
+     return true;
+ }
+
+
 /** Base class for all Descriptor implementations. */
 class DescriptorImpl : public Descriptor
 {
@@ -516,13 +541,6 @@ public:
     DescriptorImpl(std::vector<std::unique_ptr<PubkeyProvider>> pubkeys, const std::string& name) : m_pubkey_args(std::move(pubkeys)), m_name(name), m_subdescriptor_args() {}
     DescriptorImpl(std::vector<std::unique_ptr<PubkeyProvider>> pubkeys, std::unique_ptr<DescriptorImpl> script, const std::string& name) : m_pubkey_args(std::move(pubkeys)), m_name(name), m_subdescriptor_args(Vector(std::move(script))) {}
     DescriptorImpl(std::vector<std::unique_ptr<PubkeyProvider>> pubkeys, std::vector<std::unique_ptr<DescriptorImpl>> scripts, const std::string& name) : m_pubkey_args(std::move(pubkeys)), m_name(name), m_subdescriptor_args(std::move(scripts)) {}
-
-    enum class StringType
-    {
-        PUBLIC,
-        PRIVATE,
-        NORMALIZED,
-    };
 
     bool IsSolvable() const override
     {
@@ -563,17 +581,7 @@ public:
         for (const auto& pubkey : m_pubkey_args) {
             if (pos++) ret += ",";
             std::string tmp;
-            switch (type) {
-                case StringType::NORMALIZED:
-                    if (!pubkey->ToNormalizedString(*arg, tmp, cache)) return false;
-                    break;
-                case StringType::PRIVATE:
-                    if (!pubkey->ToPrivateString(*arg, tmp)) return false;
-                    break;
-                case StringType::PUBLIC:
-                    tmp = pubkey->ToString();
-                    break;
-            }
+            if (!KeyToString(arg, tmp, type, *pubkey, cache)) return false;
             ret += std::move(tmp);
         }
         std::string subscript;
