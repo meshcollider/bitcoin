@@ -483,6 +483,20 @@ public:
         return *this;
     }
 
+    CScript& operator+=(const CScript& b)
+     {
+         reserve(size() + b.size());
+         insert(end(), b.begin(), b.end());
+         return *this;
+     }
+
+    friend CScript operator+(const CScript& a, const CScript& b)
+     {
+         CScript ret = a;
+         ret += b;
+         return ret;
+     }
+
     bool GetOp(const_iterator& pc, opcodetype& opcodeRet, std::vector<unsigned char>& vchRet) const
     {
         return GetScriptOp(pc, end(), opcodeRet, &vchRet);
